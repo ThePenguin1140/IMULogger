@@ -1,3 +1,5 @@
+#include <DS1302.h> //clock
+
 #define RST 9
 #define DAT 8
 #define CLK 7

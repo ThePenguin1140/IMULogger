@@ -46,6 +46,16 @@ void setup() {
   } else {
     Serial.println("DONE");
   }
+
+  Serial.print("Creating new Log File...");
+  File logFile = SD.open("accelbus.csv", FILE_WRITE);
+  Serial.print("...");
+  if (logFile) {
+    Serial.println("DONE");
+    logFile.close();
+  } else {
+    Serial.println("ERROR");
+  }
   
   //TODO setup IMU
   //TODO setup IR Remote

@@ -34,6 +34,18 @@ void setup() {
     return;
   }
   Serial.println("DONE");
+
+  //Init Log file
+  Serial.print("Searching for log file...");
+  //TODO figure out how to use fileName as a parameter
+  if ( SD.exists("accelbus.csv") ) {
+    Serial.println("FOUND");
+    Serial.print("Removing file...");
+    SD.remove("accelbus.csv");
+    Serial.println("DONE");
+  } else {
+    Serial.println("DONE");
+  }
   
   //TODO setup IMU
   //TODO setup IR Remote

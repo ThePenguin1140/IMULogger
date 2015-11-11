@@ -10,6 +10,10 @@
 #define START "FF02FD"
 #define STOP "FF52AD"
 
+#define BLUE 5
+#define YELLOW 3
+#define RED 2
+
 boolean setClock = false;
 IRrecv irrecv(RECV_PIN);
 decode_results results;

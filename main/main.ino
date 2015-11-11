@@ -1,3 +1,7 @@
+#define RST 9
+#define DAT 8
+#define CLK 7
+
 void setup() {
   //TODO setup clock
   //TODO setup IMU

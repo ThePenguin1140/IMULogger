@@ -4,10 +4,22 @@
 #define DAT 8
 #define CLK 7
 
+boolean setClock = false;
+DS1302 rtc(RST, DAT, CLK);
+
 void setup() {
   Serial.begin(9600);
   
-  //TODO setup clock
+  //set clock if selected
+  rtc.halt(false);
+  if (setClock) {
+    Serial.print("Setting Clock...");
+    rtc.writeProtect(false);
+    Time t(2015, 10, 9, 12, 00, 00, Time::kFriday);
+    rtc.time(t);
+    Serial.println("DONE");
+  }
+  
   //TODO setup IMU
   //TODO setup IR Remote
   //TODO setup various pins (LEDs)

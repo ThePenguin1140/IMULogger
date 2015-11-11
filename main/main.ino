@@ -26,6 +26,14 @@ void setup() {
     rtc.time(t);
     Serial.println("DONE");
   }
+
+  //init SD
+  Serial.print("Initializing SD card communications...");
+  if ( !SD.begin(4) ) {
+    Serial.println("FAILED");
+    return;
+  }
+  Serial.println("DONE");
   
   //TODO setup IMU
   //TODO setup IR Remote

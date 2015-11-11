@@ -16,7 +16,7 @@ void setup() {
   Serial.print("...");
   digitalWrite(10, HIGH);
   Serial.println("DONE");
-  
+
   //set clock if selected
   rtc.halt(false);
   if (setClock) {
@@ -56,15 +56,23 @@ void setup() {
   } else {
     Serial.println("ERROR");
   }
-  
+
   //TODO setup IMU
   //TODO setup IR Remote
   //TODO setup various pins (LEDs)
 }
 
-//TODO add vars for logging
-float x_avg = 0, x_min = 0, x_max = 0, y_avg = 0, y_min = 0, y_max = 0, z_avg = 0, z_min = 0, z_max = 0;
-int seqnum = 0, count = 0;
+float x_avg = 0;
+float x_min = 0;
+float x_max = 0;
+float y_avg = 0;
+float y_min = 0;
+float y_max = 0;
+float z_avg = 0;
+float z_min = 0;
+float z_max = 0;
+int seqnum = 0;
+int count = 0;
 
 void loop() {
   //TODO monitor IR remote for OK and # press

@@ -5,6 +5,8 @@
 #define CLK 7
 
 void setup() {
+  Serial.begin(9600);
+  
   //TODO setup clock
   //TODO setup IMU
   //TODO setup IR Remote

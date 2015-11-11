@@ -1,15 +1,33 @@
+#include <DS1302.h> //clock
 
-float x_avg = 0, x_min = 0, x_max = 0, y_avg = 0, y_min = 0, y_max = 0, z_avg = 0, z_min = 0, z_max = 0;
-int seqnum = 0, count = 0;
+#define RST 9
+#define DAT 8
+#define CLK 7
+
+boolean setClock = false;
+DS1302 rtc(RST, DAT, CLK);
 
 void setup() {
-  //TODO setup clock
+  Serial.begin(9600);
+  
+  //set clock if selected
+  rtc.halt(false);
+  if (setClock) {
+    Serial.print("Setting Clock...");
+    rtc.writeProtect(false);
+    Time t(2015, 10, 9, 12, 00, 00, Time::kFriday);
+    rtc.time(t);
+    Serial.println("DONE");
+  }
+  
   //TODO setup IMU
   //TODO setup IR Remote
   //TODO setup various pins (LEDs)
 }
 
 //TODO add vars for logging
+float x_avg = 0, x_min = 0, x_max = 0, y_avg = 0, y_min = 0, y_max = 0, z_avg = 0, z_min = 0, z_max = 0;
+int seqnum = 0, count = 0;
 
 void loop() {
   //TODO monitor IR remote for OK and # press

@@ -1,5 +1,7 @@
 #include <DS1302.h> //clock
 
+//TODO add remaining pin definitions
+
 #define RST 9
 #define DAT 8
 #define CLK 7
@@ -77,6 +79,8 @@ int count = 0;
 void loop() {
   //TODO monitor IR remote for OK and # press
 }
+
+//TODO write function that writes to SD
 
 void updateWithValues(float x, float, y, float z) {
   if (x < x_min) x_min = x;

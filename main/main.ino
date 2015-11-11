@@ -1,3 +1,7 @@
+
+float x_avg = 0, x_min = 0, x_max = 0, y_avg = 0, y_min = 0, y_max = 0, z_avg = 0, z_min = 0, z_max = 0;
+int seqnum = 0, count = 0;
+
 void setup() {
   //TODO setup clock
   //TODO setup IMU
@@ -11,6 +15,21 @@ void loop() {
   //TODO monitor IR remote for OK and # press
 }
 
+void updateWithValues(float x, float, y, float z){
+	if(x<x_min) x_min = x;
+	if(y<y_min) y_min = y;
+	if(z<z_min) z_min = z;
+	
+	if(x>x_max) x_max = x;
+	if(y>y_max) y_max = y;
+	if(z>z_max) z_max = z;
+	
+	x_avg = ((x_avg * count) + x)/(count+1);	
+	y_avg = ((y_avg * count) + y)/(count+1);	
+	z_avg = ((z_avg * count) + z)/(count+1);
+	
+	count++;
+}
 
 String createTimeStampString(int year, int month, int day, int hour, int minute, int second) {
   String dateStr = String(year - 2000);

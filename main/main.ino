@@ -79,11 +79,11 @@ int count = 0;
 void loop() {
   //TODO monitor IR remote for OK and # press
   //make a variable that toggles according to the IR remote
-  
+
   //TODO write general logic as to when to record
-  //make a if/else that checks the above var and then 
+  //make a if/else that checks the above var and then
   //calls updateWithValues every loop with the new IMU values
-  
+
   //TODO write general logic of writing to SD every 2 seconds
   //make an if statment that will write to the SD every 2 seconds
   //if the system is recording.
@@ -107,11 +107,19 @@ void updateWithValues(float x, float, y, float z) {
   count++;
 }
 
-String createTimeStampString(int year, int month, int day, int hour, int minute, int second) {
-  String dateStr = String(year - 2000);
-  dateStr += "-" + intToMonth(month) + "-" + String(day);
-  String timeStr = String(hour) + ":" + String(minute) + ":" + String(second);
-  return dateStr + " " + timeStr;
+String createLogTimeStamp(Time t) {
+  return
+    String(t.yr) +
+    "-" +
+    intToMonth(t.mon) +
+    "-" +
+    makeDoubleDigit(t.date) +
+    " " +
+    makeDoubleDigit(t.hr) +
+    ":" +
+    makeDoubleDigit(t.min) +
+    ":" +
+    makeDoubleDigit(t.sec);
 }
 
 String makeDoubleDigit(int i) {

@@ -9,6 +9,13 @@ DS1302 rtc(RST, DAT, CLK);
 
 void setup() {
   Serial.begin(9600);
+
+  //configure ethernet shield
+  Serial.print("Disable Ethernet...");
+  pinMode(10, OUTPUT);
+  Serial.print("...");
+  digitalWrite(10, HIGH);
+  Serial.println("DONE");
   
   //set clock if selected
   rtc.halt(false);

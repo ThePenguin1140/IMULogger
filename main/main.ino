@@ -76,13 +76,15 @@ void setup() {
   } else {
     Serial.println("ERROR");
   }
-  
+
+  //TODO possibly add serial printouts here
+
   irrecv.enableIRIn(); // Start the IR receiver
 
   Wire.begin(); //Join the bus as a master
 
   initMMA8452(); //Test and intialize the MMA8452
-  
+
   //config various pins
   Serial.print("Setting pin modes...");
   pinMode(RED, OUTPUT);
@@ -109,30 +111,55 @@ void loop() {
 
   // IR monitoring
   String input;
-  if(irrecv.decode(&results)){
-	input = String(results.value, HEX);
-	input.toUpperCase();
-	irrecv.resume(); 
+  if (irrecv.decode(&results)) {
+    input = String(results.value, HEX);
+    input.toUpperCase();
+    irrecv.resume();
   }
-  
-  if(input==START){ //remote button OK has been hit
-  
-  }
-  if(input==STOP){ //remote button # has been hit
-  
-  }
-  
 
-  //TODO write general logic as to when to record
-  //make a if/else that checks the above var and then
-  //calls updateWithValues every loop with the new IMU values
+  if (input == START) { //remote button OK has been hit
+     //TODO put in blinking lights and shit
+  }
+  if (input == STOP) { //remote button # has been hit
 
-  //TODO write general logic of writing to SD every 2 seconds
-  //make an if statment that will write to the SD every 2 seconds
-  //if the system is recording.
+  }
+
+  if (recording) {
+    int accelCount[3];  // Stores the 12-bit signed value
+    readAccelData(accelCount);  // Read the x/y/z adc values
+
+    // Now we'll calculate the accleration value into actual g's
+    float accelG[3];  // Stores the real accel value in g's
+    for (int i = 0 ; i < 3 ; i++)
+    {
+      // get actual g value, this depends on what GSCALE was set
+      accelG[i] = (float) accelCount[i] / ((1 << 12) / (2 * GSCALE));
+      //1<<12 generates 2^12 (two to the power of twelve)
+    }
+
+    updateWithValues(accelG[0], accelG[1], accelG[2]);
+
+    if ( millis() % 2000 < 5 ) {
+      String line = constructLogEntry();
+      File logFile = SD.open("accelbus.csv", FILE_WRITE);
+      if (logFile) {
+        Serial.println(line);
+        logFile.println(line);
+        logFile.close();
+      } else {
+        Serial.println("ERROR PRINTING TO FILE");
+        return;
+      }
+    }
+  }
 }
 
-//TODO write function that writes to SD
+String constructLogEntry() {
+  return String(count) + "," + constructLogTimeStamp() +
+         "," + x_avg + "," + x_min + "," + x_max +
+         "," + y_avg + "," + y_min + "," + y_max +
+         "," + z_avg + "," + z_min + "," + z_max;
+}
 
 void updateWithValues(float x, float, y, float z) {
   if (x < x_min) x_min = x;
@@ -203,4 +230,113 @@ String intToMonth(int m) {
     default:
       return "ERR";
   }
+}
+
+void readAccelData(int *destination)
+{
+  byte rawData[6];  // x/y/z accel register data stored here
+
+  readRegisters(OUT_X_MSB, 6, rawData);  // Read the six raw data registers into data array
+
+  // Loop to calculate 12-bit ADC and g value for each axis
+  for (int i = 0; i < 3 ; i++)
+  {
+    int gCount = (rawData[i * 2] << 8) | rawData[(i * 2) + 1]; //Combine the two 8 bit registers into one 12-bit number
+    gCount >>= 4; //The registers are left align, here we right align the 12-bit integer
+
+    // If the number is negative, we have to make it so manually (no 12-bit data type)
+    if (rawData[i * 2] > 0x7F)
+    {
+      gCount = ~gCount + 1;
+      gCount *= -1;  // Transform into negative 2's complement #
+    }
+
+    destination[i] = gCount; //Record this gCount into the 3 int array
+  }
+}
+
+// Initialize the MMA8452 registers
+// See the many application notes for more info on setting all of these registers:
+// http://www.freescale.com/webapp/sps/site/prod_summary.jsp?code=MMA8452Q
+void initMMA8452()
+{
+  Serial.println("Initialize IMU");
+  byte c = readRegister(WHO_AM_I);  // Read WHO_AM_I register
+  Serial.println("Reading WHOAMI");
+  if (c == 0x2A) // WHO_AM_I should always be 0x2A
+  {
+    Serial.println("MMA8452Q (GY-45) is online...");
+  }
+  else
+  {
+    Serial.print("Could not connect to MMA8452Q (GY-45): 0x");
+    Serial.println(c, HEX);
+    while (true) ; // stall if communication doesn't happen
+  }
+  Serial.println("Gyros in standby.");
+  MMA8452Standby();  // Must be in standby to change registers
+
+  // Set up the full scale range to 2, 4, or 8g.
+  byte fsr = GSCALE;
+  if (fsr > 8) fsr = 8; //Easy error check
+  fsr >>= 2; // 00 = 2G, 01 = 4A, 10 = 8G
+  writeRegister(XYZ_DATA_CFG, fsr);
+
+  //The default data rate is 800Hz;
+  //we don't need to modify it in this example code
+  Serial.println("Gyros activated.");
+  MMA8452Active();  // Set to active to start reading
+}
+
+// Sets the MMA8452 to standby mode. It must be in standby to change most register settings
+void MMA8452Standby()
+{
+  byte c = readRegister(CTRL_REG1);
+  //Clear the active bit to go into standby
+  writeRegister(CTRL_REG1, c & ~(0x01));
+}
+
+// Sets the MMA8452 to active mode. Needs to be in this mode to output data
+void MMA8452Active()
+{
+  byte c = readRegister(CTRL_REG1);
+  //Set the active bit to begin detection
+  writeRegister(CTRL_REG1, c | 0x01);
+}
+
+// Read bytesToRead sequentially, starting at addressToRead into the dest byte array
+void readRegisters(byte addressToRead, int bytesToRead, byte * dest)
+{
+  Wire.beginTransmission(MMA8452_ADDRESS);
+  Wire.write(addressToRead);
+  Wire.endTransmission(false); //endTransmission but keep the connection active
+
+  Wire.requestFrom(MMA8452_ADDRESS, bytesToRead); //Ask for bytes, once done, bus is released by default
+
+  while (Wire.available() < bytesToRead); //Hang out until we get the # of bytes we expect
+
+  for (int x = 0 ; x < bytesToRead ; x++)
+    dest[x] = Wire.read();
+}
+
+// Read a single byte from addressToRead and return it as a byte
+byte readRegister(byte addressToRead)
+{
+  Wire.beginTransmission(MMA8452_ADDRESS);
+  Wire.write(addressToRead);
+  Wire.endTransmission(false); //endTransmission but keep the connection active
+
+  Wire.requestFrom(MMA8452_ADDRESS, 1); //Ask for 1 byte, once done, bus is released by default
+
+  while (!Wire.available()) ; //Wait for the data to come back
+  return Wire.read(); //Return this one byte
+}
+
+// Writes a single byte (dataToWrite) into addressToWrite
+void writeRegister(byte addressToWrite, byte dataToWrite)
+{
+  Wire.beginTransmission(MMA8452_ADDRESS);
+  Wire.write(addressToWrite);
+  Wire.write(dataToWrite);
+  Wire.endTransmission(); //Stop transmitting
 }

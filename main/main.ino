@@ -1,7 +1,6 @@
 #include <DS1302.h> //clock
-#include "IRremote.h" //IR
-
-//TODO add remaining pin definitions
+#include <IRremote.h> //IR
+#include <Wire.h> //IMU
 
 #define RST 9
 #define DAT 8
@@ -77,12 +76,21 @@ void setup() {
   } else {
     Serial.println("ERROR");
   }
-
-  //TODO setup IMU
   
   irrecv.enableIRIn(); // Start the IR receiver
+
+  Wire.begin(); //Join the bus as a master
+
+  initMMA8452(); //Test and intialize the MMA8452
   
-  //TODO setup various pins (LEDs)
+  //config various pins
+  Serial.print("Setting pin modes...");
+  pinMode(RED, OUTPUT);
+  Serial.print("...");
+  pinMode(BLUE, OUTPUT);
+  Serial.print("...");
+  pinMode(YELLOW, OUTPUT);
+  Serial.println("DONE");
 }
 
 float x_avg = 0;

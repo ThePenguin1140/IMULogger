@@ -6,9 +6,22 @@
 #define RST 9
 #define DAT 8
 #define CLK 7
-#define RECV_PIN 2
+
 #define START "FF02FD"
 #define STOP "FF52AD"
+
+#define BLUE 5
+#define YELLOW 3
+#define RED 2
+
+#define IR_RECV 6
+
+#define MMA8452_ADDRESS 0x1C // 0x1D if SA0 is high, 0x1C if low
+#define OUT_X_MSB 0x01
+#define XYZ_DATA_CFG 0x0E
+#define WHO_AM_I 0x0D
+#define CTRL_REG1 0x2A
+#define GSCALE 2 // Full-scale range to +/-2, 4, or 8g.
 
 boolean setClock = false;
 IRrecv irrecv(RECV_PIN);

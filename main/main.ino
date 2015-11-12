@@ -6,7 +6,7 @@
 #define RST 9
 #define DAT 8
 #define CLK 7
-#define RECV_PIN 2
+
 #define START "FF02FD"
 #define STOP "FF52AD"
 

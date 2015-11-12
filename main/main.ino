@@ -1,12 +1,18 @@
 #include <DS1302.h> //clock
+#include "IRremote.h" //IR
 
 //TODO add remaining pin definitions
 
 #define RST 9
 #define DAT 8
 #define CLK 7
+#define RECV_PIN 2
+#define START "FF02FD"
+#define STOP "FF52AD"
 
 boolean setClock = false;
+IRrecv irrecv(RECV_PIN);
+decode_results results;
 DS1302 rtc(RST, DAT, CLK);
 
 void setup() {
@@ -60,7 +66,9 @@ void setup() {
   }
 
   //TODO setup IMU
-  //TODO setup IR Remote
+  
+  irrecv.enableIRIn(); // Start the IR receiver
+  
   //TODO setup various pins (LEDs)
 }
 
@@ -77,8 +85,22 @@ int seqnum = 0;
 int count = 0;
 
 void loop() {
-  //TODO monitor IR remote for OK and # press
-  //make a variable that toggles according to the IR remote
+
+  // IR monitoring
+  String input;
+  if(irrecv.decode(&results)){
+	input = String(results.value, HEX);
+	input.toUpperCase();
+	irrecv.resume(); 
+  }
+  
+  if(input==START){ //remote button OK has been hit
+  
+  }
+  if(input==STOP){ //remote button # has been hit
+  
+  }
+  
 
   //TODO write general logic as to when to record
   //make a if/else that checks the above var and then

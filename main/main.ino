@@ -1,6 +1,7 @@
 #include <DS1302.h> //clock
 #include <IRremote.h> //IR
 #include <Wire.h> //IMU
+#include <SD.h> //SD
 
 #define RST 9
 #define DAT 8
@@ -23,7 +24,7 @@
 #define GSCALE 2 // Full-scale range to +/-2, 4, or 8g.
 
 boolean setClock = false;
-IRrecv irrecv(RECV_PIN);
+IRrecv irrecv(IR_RECV);
 decode_results results;
 DS1302 rtc(RST, DAT, CLK);
 
@@ -38,14 +39,14 @@ void setup() {
   Serial.println("DONE");
 
   //set clock if selected
-  rtc.halt(false);
-  if (setClock) {
-    Serial.print("Setting Clock...");
-    rtc.writeProtect(false);
-    Time t(2015, 10, 9, 12, 00, 00, Time::kFriday);
+  if (setClock)
+  {
+    Time t(2015, 10, 13, 18, 45, 10, Time::kWednesday);
     rtc.time(t);
-    Serial.println("DONE");
   }
+
+  rtc.writeProtect(false);
+  rtc.halt(false);
 
   //init SD
   Serial.print("Initializing SD card communications...");
@@ -56,25 +57,15 @@ void setup() {
   Serial.println("DONE");
 
   //Init Log file
-  Serial.print("Searching for log file...");
-  //TODO figure out how to use fileName as a parameter
-  if ( SD.exists("accelbus.csv") ) {
-    Serial.println("FOUND");
-    Serial.print("Removing file...");
-    SD.remove("accelbus.csv");
-    Serial.println("DONE");
-  } else {
-    Serial.println("DONE");
+  if (!SD.begin(4)) {
+    Serial.println("initialization failed!");
+    return;
   }
-
-  Serial.print("Creating new Log File...");
-  File logFile = SD.open("accelbus.csv", FILE_WRITE);
-  Serial.print("...");
-  if (logFile) {
-    Serial.println("DONE");
-    logFile.close();
-  } else {
-    Serial.println("ERROR");
+  Serial.println("initialization done.");
+  if (SD.exists("accelbus.csv"))
+  {
+    SD.remove("accelbus.csv");
+    Serial.println("Previous log removed.");
   }
 
   //TODO possibly add serial printouts here
@@ -106,6 +97,8 @@ float z_min = 0;
 float z_max = 0;
 int seqnum = 0;
 int count = 0;
+int recording = 0;
+boolean isIMUvalid = false; // used to determine a failed IMU read
 
 void loop() {
 
@@ -117,11 +110,11 @@ void loop() {
     irrecv.resume();
   }
 
-  if (input == START) { //remote button OK has been hit
-     //TODO put in blinking lights and shit
+  if (input == START) { //remote recording OK has been hit
+    recording = 1;
   }
-  if (input == STOP) { //remote button # has been hit
-
+  if (input == STOP) { //remote recording # has been hit
+    recording = 0;
   }
 
   if (recording) {
@@ -154,14 +147,9 @@ void loop() {
   }
 }
 
-String constructLogEntry() {
-  return String(count) + "," + constructLogTimeStamp() +
-         "," + x_avg + "," + x_min + "," + x_max +
-         "," + y_avg + "," + y_min + "," + y_max +
-         "," + z_avg + "," + z_min + "," + z_max;
-}
 
-void updateWithValues(float x, float, y, float z) {
+
+void updateWithValues(float x, float y, float z) {
   if (x < x_min) x_min = x;
   if (y < y_min) y_min = y;
   if (z < z_min) z_min = z;
@@ -175,6 +163,13 @@ void updateWithValues(float x, float, y, float z) {
   z_avg = ((z_avg * count) + z) / (count + 1);
 
   count++;
+}
+
+String constructLogEntry() {
+  return String(count) + "," + createLogTimeStamp(rtc.time()) +
+         "," + x_avg + "," + x_min + "," + x_max +
+         "," + y_avg + "," + y_min + "," + y_max +
+         "," + z_avg + "," + z_min + "," + z_max;
 }
 
 String createLogTimeStamp(Time t) {
@@ -304,7 +299,6 @@ void MMA8452Active()
   writeRegister(CTRL_REG1, c | 0x01);
 }
 
-// Read bytesToRead sequentially, starting at addressToRead into the dest byte array
 void readRegisters(byte addressToRead, int bytesToRead, byte * dest)
 {
   Wire.beginTransmission(MMA8452_ADDRESS);
@@ -328,8 +322,16 @@ byte readRegister(byte addressToRead)
 
   Wire.requestFrom(MMA8452_ADDRESS, 1); //Ask for 1 byte, once done, bus is released by default
 
-  while (!Wire.available()) ; //Wait for the data to come back
-  return Wire.read(); //Return this one byte
+  isIMUvalid = false;
+  byte result = 0;
+  long timeOutMicros = micros(); // microsecond clock
+  while (!Wire.available() && (micros() - timeOutMicros < 2000)) ; //Wait for the data to come back
+  if (Wire.available())
+  {
+    result = Wire.read(); //save this byte for return
+    isIMUvalid = true; // good read!
+  }
+  return result; // this will be 0 and valid flag false if bad read
 }
 
 // Writes a single byte (dataToWrite) into addressToWrite

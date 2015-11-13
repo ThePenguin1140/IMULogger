@@ -97,7 +97,7 @@ float z_min = 0;
 float z_max = 0;
 int seqnum = 0;
 int count = 0;
-int recording = 0;
+boolean recording = false;
 boolean isIMUvalid = false; // used to determine a failed IMU read
 
 void loop() {
@@ -111,10 +111,10 @@ void loop() {
   }
 
   if (input == START) { //remote recording OK has been hit
-    recording = 1;
+    recording = true;
   }
   if (input == STOP) { //remote recording # has been hit
-    recording = 0;
+    recording = false;
   }
 
   if (recording) {
@@ -166,7 +166,8 @@ void updateWithValues(float x, float y, float z) {
 }
 
 String constructLogEntry() {
-  return String(count) + "," + createLogTimeStamp(rtc.time()) +
+  seqnum++;
+  return String(seqnum) + "," + createLogTimeStamp(rtc.time()) +
          "," + x_avg + "," + x_min + "," + x_max +
          "," + y_avg + "," + y_min + "," + y_max +
          "," + z_avg + "," + z_min + "," + z_max;
